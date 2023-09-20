@@ -20,7 +20,7 @@ npm install
 
    ```
     npm install -g firebase-tools
-```
+   ```
 
 4. **create a new project on firebase**
 
