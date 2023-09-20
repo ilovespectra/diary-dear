@@ -2,6 +2,12 @@
 
 the journal you won't lose next time you move.
 
+[demo here](https://journal-app-ea7ec.web.app/index.html)<br>
+*the password for view entries is* 
+```
+YOUR_PASSWORD
+```
+
 ## Prerequisites
 
 Before you begin, ensure you have the following prerequisites installed on your machine:
