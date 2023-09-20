@@ -99,7 +99,11 @@ setup firesore, follow these responses carefully:
 
 ![firestore](https://cdn.discordapp.com/attachments/1051281685234327613/1153863374136950845/image.png)
 
-11. **deploy**
+11. **change password**
+
+open `view_entries`, navigate to line `175` and update the password to one of your choice. 
+
+12. **deploy**
 
 ```
 firebase deploy --only hosting   
