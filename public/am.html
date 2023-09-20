@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>am entry</title>
+
+    <style>
+        body {
+            background-color: #333;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 20px;
+            padding: 15px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://cdn.discordapp.com/attachments/1051281685234327613/1153390005801189497/image.png');
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            padding: 20px;
+            background-color: #222;
+            border: 2px dotted gray;
+            width: 70%; 
+            margin: 0 auto; 
+            min-height: 70vh;
+            box-sizing: border-box; 
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 20px;
+            border: 1px solid #666;
+            border-radius: 5px;
+            background-color: #444;
+            color: #fff;
+        }
+
+        .text-input::selection {
+            background-color: white;
+            color: #333;
+        }
+
+        .submit-button {
+            padding: 10px 20px;
+            background-color: #444;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #666;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #444;
+            font-family: 'Courier New', Courier, monospace;
+            border: none;
+            color: #fff;
+            text-decoration: none;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #666;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #222;
+            color: #fff;
+            padding: 20px;
+            border: 2px dotted gray;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Close Button Styles */
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    
+</head>
+<body>
+    <center>
+    <div class="container">
+        <h1>am entry</h1>
+        <form id="amEntryForm">
+            <div>
+                <label class="input-label" for="gratitude">gratitude: list three things you're grateful for today.</label>
+                <textarea id="gratitude" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="feelings">feelings: describe your current emotions.</label>
+                <textarea id="feelings" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="intentions">intentions: set a positive intention for the day.</label>
+                <textarea id="intentions" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="selfCompassion">self-compassion: write a kind message to yourself.</label>
+                <textarea id="selfCompassion" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="focus">focus: identify one task or goal for today.</label>
+                <textarea id="focus" class="text-input" rows="3" required></textarea>
+            </div>
+            <button class="submit-button" type="submit">submit</button>
+        </form>
+        <a href="index.html" class="btn">go back</a>
+    </div>
+    </center>
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>your am journal entry has been logged successfully!</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // This is the configuration provided by Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        // Function to save AM journal entry
+        document.getElementById('amEntryForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const gratitude = document.getElementById('gratitude').value;
+            const feelings = document.getElementById('feelings').value;
+            const intentions = document.getElementById('intentions').value;
+            const selfCompassion = document.getElementById('selfCompassion').value;
+            const focus = document.getElementById('focus').value;
+
+            // Save the journal entry to Firebase Firestore with a timestamp
+            addDoc(collection(db, 'AM Entries'), {
+                gratitude,
+                feelings,
+                intentions,
+                selfCompassion,
+                focus,
+                timestamp: serverTimestamp() // Add a server timestamp
+            })
+            .then(function (docRef) {
+                console.log(`AM journal entry saved with ID: ${docRef.id}`);
+                // Clear input fields after saving
+                document.getElementById('gratitude').value = '';
+                document.getElementById('feelings').value = '';
+                document.getElementById('intentions').value = '';
+                document.getElementById('selfCompassion').value = '';
+                document.getElementById('focus').value = '';
+                // Show the success modal
+                showModal();
+            })
+            .catch(function (error) {
+                console.error('Error adding document: ', error);
+            });
+        });
+
+        // Get the modal and close button elements
+        const modal = document.getElementById("myModal");
+        const closeButton = document.querySelector(".close");
+
+        // Function to display the modal
+        function showModal() {
+            modal.style.display = "block";
+        }
+
+        // Function to hide the modal
+        function hideModal() {
+            modal.style.display = "none";
+        }
+
+        // Close the modal when the close button is clicked
+        closeButton.addEventListener("click", hideModal);
+    </script>
+</body>
+</html>

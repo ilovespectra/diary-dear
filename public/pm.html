@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pm entry</title>
+
+    <style>
+        body {
+            background-color: #333;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 10px;
+        }
+
+        /* Create a pseudo-element for speckles (same as before) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            font-family: 'Courier New', Courier, monospace;
+            height: 100%;
+            background: url('https://cdn.discordapp.com/attachments/1051281685234327613/1153390005801189497/image.png');
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            padding: 20px;
+            background-color: #222;
+            border: 2px dotted gray;
+            font-family: 'Courier New', Courier, monospace;
+            width: 70%; /* Set the container width to 70% of the page */
+            margin: 0 auto; /* Center the container horizontally */
+            min-height: 70vh; /* Set a minimum height for the container (70% of the viewport height) */
+            box-sizing: border-box; /* Include padding and border in the width calculation */
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            border: 1px solid #666;
+            border-radius: 5px;
+            background-color: #444;
+            color: #fff;
+        }
+
+        /* Change the selection background color to white */
+        .text-input::selection {
+            background-color: white;
+            color: #333; /* Change the text color to a darker color for better visibility */
+        }
+
+        .submit-button {
+            padding: 10px 20px;
+            background-color: #444;
+            border: none;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #666;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #444;
+            border: none;
+            color: #fff;
+            text-decoration: none;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #666;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #222;
+            color: #fff;
+            padding: 20px;
+            border: 2px dotted gray;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Close Button Styles */
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    
+</head>
+<body>
+    <div class="container">
+        <h1>pm entry</h1>
+        <form id="pmEntryForm">
+            <div>
+                <label class="input-label" for="accomplishments">accomplishments: list three things you achieved today.</label>
+                <textarea id="accomplishments" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="challenges">challenges: describe any obstacles you faced.</label>
+                <textarea id="challenges" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="selfCompassion">self-compassion: reflect on moments of self-kindness.</label>
+                <textarea id="selfCompassion" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="whatILearned">what i learned: note any insights or lessons from the day.</label>
+                <textarea id="whatILearned" class="text-input" rows="3" required></textarea>
+            </div>
+            <div>
+                <label class="input-label" for="intentionsForTomorrow">intentions for tomorrow: set a positive intention for the next day.</label>
+                <textarea id="intentionsForTomorrow" class="text-input" rows="3" required></textarea>
+            </div>
+            <button class="submit-button" type="submit">submit</button>
+        </form>
+        <a href="index.html" class="btn">go back</a>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>your pm journal entry has been logged successfully!</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // This is the configuration provided by Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        // Function to save PM journal entry
+        document.getElementById('pmEntryForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const accomplishments = document.getElementById('accomplishments').value;
+            const challenges = document.getElementById('challenges').value;
+            const selfCompassion = document.getElementById('selfCompassion').value;
+            const whatILearned = document.getElementById('whatILearned').value;
+            const intentionsForTomorrow = document.getElementById('intentionsForTomorrow').value;
+
+            // Save the journal entry to Firebase Firestore with a timestamp
+            addDoc(collection(db, 'PM Entries'), {
+                accomplishments,
+                challenges,
+                selfCompassion,
+                whatILearned,
+                intentionsForTomorrow,
+                timestamp: serverTimestamp() // Add a server timestamp
+            })
+            .then(function (docRef) {
+                console.log(`PM journal entry saved with ID: ${docRef.id}`);
+                // Clear input fields after saving
+                document.getElementById('accomplishments').value = '';
+                document.getElementById('challenges').value = '';
+                document.getElementById('selfCompassion').value = '';
+                document.getElementById('whatILearned').value = '';
+                document.getElementById('intentionsForTomorrow').value = '';
+                // Show the success modal
+                showModal();
+            })
+            .catch(function (error) {
+                console.error('Error adding document: ', error);
+            });
+        });
+
+        // Get the modal and close button elements
+        const modal = document.getElementById("myModal");
+        const closeButton = document.querySelector(".close");
+
+        // Function to display the modal
+        function showModal() {
+            modal.style.display = "block";
+        }
+
+        // Function to hide the modal
+        function hideModal() {
+            modal.style.display = "none";
+        }
+
+        // Close the modal when the close button is clicked
+        closeButton.addEventListener("click", hideModal);
+    </script>
+</body>
+</html>

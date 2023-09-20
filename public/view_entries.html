@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>view entries</title>
+
+    <style>
+        body {
+            background-color: #333;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 20px;
+            padding: 15px;
+        }
+
+        /* Create a pseudo-element for speckles (same as before) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://cdn.discordapp.com/attachments/1051281685234327613/1153390005801189497/image.png');
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            padding: 20px;
+            background-color: #222;
+            border: 2px dotted gray;
+            width: 70%; /* Set the container width to 70% of the page */
+            margin: 5 auto; /* Center the container horizontally */
+            min-height: auto; /* Remove the fixed minimum height */
+            box-sizing: border-box; /* Include padding and border in the width calculation */
+        }
+
+        .container p {
+            margin: 5; /* Remove default paragraph margins to prevent extra spacing */
+            word-wrap: break-word; /* Allow text to wrap within the container */
+        }
+
+        .entry {
+            background-color: #333;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #fff; /* Add a solid white border */
+            border-radius: 5px;
+        }
+
+        /* Add a dotted border style */
+        .entry:not(:last-child) {
+            border-bottom: 2px dotted #fff; /* Add a dotted white border between entries */
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 20px;
+            border: 1px solid #666;
+            border-radius: 5px;
+            background-color: #444;
+            color: #fff;
+        }
+
+        /* Change the selection background color to white */
+        .text-input::selection {
+            background-color: white;
+            color: #333; /* Change the text color to a darker color for better visibility */
+        }
+
+        .submit-button {
+            padding: 10px 20px;
+            background-color: #444;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #666;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #444;
+            border: none;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            text-decoration: none;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #666;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #222;
+            color: #fff;
+            padding: 20px;
+            border: 2px dotted gray;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Close Button Styles */
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <center>
+    <div class="container">
+        <h1>view entries</h1>
+        <!-- Filter controls -->
+        <div class="filters" id="filters">
+            <label for="dateFilter">filter by date:</label>
+            <input type="date" id="dateFilter">
+            
+            <label for="typeFilter">filter by type:</label>
+            <select id="typeFilter">
+                <option value="AM Entries">am entries</option>
+                <option value="PM Entries">pm entries</option>
+                <option value="Freeform Entries">freewrite entries</option>
+            </select>
+            
+            <button class="btn" id="applyFilters">apply filters</button>
+        </div>
+        <div id="entryList">
+        </div>
+        <a href="index.html" class="btn">go back</a>
+    </div>
+    </center>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    
+    <script>
+        const dateFilter = document.getElementById("dateFilter");
+        const typeFilter = document.getElementById("typeFilter");
+        const applyFiltersButton = document.getElementById("applyFilters");
+        const entryList = document.getElementById("entryList");
+    
+        // Password required to view results
+        const requiredPassword = "YOUR_PASSWORD";
+    
+        // Your web app's Firebase configuration
+        // This is the configuration provided by Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    
+        // Function to fetch and display entries
+        function fetchAndDisplayEntries() {
+            const selectedDate = dateFilter.value;
+            const selectedType = typeFilter.value;
+
+            let query = db.collection(selectedType);
+
+            if (selectedDate) {
+                query = query.where("timestamp", ">=", new Date(selectedDate + "T00:00:00"))
+                    .where("timestamp", "<=", new Date(selectedDate + "T23:59:59"));
+            }
+
+            query.get().then((querySnapshot) => {
+                entryList.innerHTML = ""; // Clear previous entries
+
+                querySnapshot.forEach((doc) => {
+                    const entryData = doc.data();
+                    const entryElement = document.createElement("div");
+                    entryElement.classList.add("entry");
+
+                    let entryContent = "";
+
+                    // Display fields based on entry type
+                    if (selectedType === "AM Entries") {
+                        entryContent += `<p><strong>Type:</strong> ${selectedType}</p>`;
+                        entryContent += `<p><strong>Date:</strong> ${entryData.timestamp.toDate().toLocaleDateString()}</p>`;
+                        // Add other fields specific to "AM Entries"
+                        // Example: entryContent += `<p><strong>Gratitude:</strong> ${entryData.gratitude || ""}</p>`;
+                    } else if (selectedType === "PM Entries") {
+                        entryContent += `<p><strong>Type:</strong> ${selectedType}</p>`;
+                        entryContent += `<p><strong>Date:</strong> ${entryData.timestamp.toDate().toLocaleDateString()}</p>`;
+                        // Add other fields specific to "PM Entries"
+                    } else if (selectedType === "Freeform Entries") {
+                        entryContent += `<p><strong>Type:</strong> ${selectedType}</p>`;
+                        entryContent += `<p><strong>Date:</strong> ${entryData.timestamp.toDate().toLocaleDateString()}</p>`;
+                        // Add other fields specific to "Freeform Entries"
+                    }
+
+                    entryElement.innerHTML = entryContent;
+                    entryList.appendChild(entryElement);
+                });
+            }).catch((error) => {
+                console.error("Error getting documents: ", error);
+            });
+        }
+        // Event listener for applying filters
+        applyFiltersButton.addEventListener("click", () => {
+            // Prompt for the password
+            const enteredPassword = prompt("Enter Password:");
+
+            // Check if the entered password is correct
+            if (enteredPassword === requiredPassword) {
+                const selectedDate = dateFilter.value;
+                const selectedType = typeFilter.value;
+
+                let query = db.collection(selectedType);
+
+                if (selectedDate) {
+                    query = query.where("timestamp", ">=", new Date(selectedDate + "T00:00:00"))
+                        .where("timestamp", "<=", new Date(selectedDate + "T23:59:59"));
+                }
+
+                query.get().then((querySnapshot) => {
+                    entryList.innerHTML = ""; // Clear previous entries
+
+                    querySnapshot.forEach((doc) => {
+                        const entryData = doc.data();
+                        const entryElement = document.createElement("div");
+                        entryElement.classList.add("entry");
+
+                        let entryContent = "";
+
+                        if (selectedType === "AM Entries") {
+                            entryContent += `<p><strong>Type:</strong> ${selectedType}</p>`;
+                            entryContent += `<p><strong>Date:</strong> ${entryData.timestamp.toDate().toLocaleDateString()}</p>`;
+                            entryContent += `<p><strong>Gratitude:</strong> ${entryData.gratitude || ""}</p>`;
+                            entryContent += `<p><strong>Feelings:</strong> ${entryData.feelings || ""}</p>`;
+                            entryContent += `<p><strong>Intentions:</strong> ${entryData.intentions || ""}</p>`;
+                            entryContent += `<p><strong>Self-Compassion:</strong> ${entryData.selfCompassion || ""}</p>`;
+                            entryContent += `<p><strong>Focus:</strong> ${entryData.focus || ""}</p>`;
+                        } else if (selectedType === "PM Entries") {
+                            entryContent += `<p><strong>Type:</strong> ${selectedType}</p>`;
+                            entryContent += `<p><strong>Date:</strong> ${entryData.timestamp.toDate().toLocaleDateString()}</p>`;
+                            entryContent += `<p><strong>Accomplishments:</strong> ${entryData.accomplishments || ""}</p>`;
+                            entryContent += `<p><strong>Challenges:</strong> ${entryData.challenges || ""}</p>`;
+                            entryContent += `<p><strong>Intentions for Tomorrow:</strong> ${entryData.intentionsForTomorrow || ""}</p>`;
+                            entryContent += `<p><strong>Self-Compassion:</strong> ${entryData.selfCompassion || ""}</p>`;
+                            entryContent += `<p><strong>What I Learned:</strong> ${entryData.whatILearned || ""}</p>`;
+                        } else if (selectedType === "Freeform Entries") {
+                            entryContent += `<p><strong>Type:</strong> ${selectedType}</p>`;
+                            entryContent += `<p><strong>Date:</strong> ${entryData.timestamp.toDate().toLocaleDateString()}</p>`;
+                            entryContent += `<p><strong>Content:</strong> ${entryData.journalEntry || ""}</p>`;
+                        }
+
+                        entryElement.innerHTML = entryContent;
+                        entryList.appendChild(entryElement);
+                    });
+                }).catch((error) => {
+                    console.error("Error getting documents: ", error);
+                });
+            } else {
+                // Display an error message if the password is incorrect
+                alert("Incorrect password. Access denied.");
+            }
+        });
+
+
+    </script>
+    
+    
+</body>
+</html>

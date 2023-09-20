@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>freewrite</title>
+
+    <style>
+        body {
+            background-color: #333;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .container {
+            padding: 20px;
+            background-color: #222;
+            border: 2px dotted gray;
+            font-family: 'Courier New', Courier, monospace;
+            width: 70%; /* Set the container width to 70% of the page */
+            margin: 0 auto; /* Center the container horizontally */
+            min-height: 70vh; /* Set a minimum height for the container (70% of the viewport height) */
+            box-sizing: border-box; /* Include padding and border in the width calculation */
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 20px;
+            border: 1px solid #666;
+            border-radius: 5px;
+            background-color: #444;
+            color: #fff;
+        }
+
+         /* Change the selection background color to white */
+         .text-input::selection {
+            background-color: white;
+            color: #333; /* Change the text color to a darker color for better visibility */
+        }
+
+        .submit-button {
+            padding: 10px 20px;
+            background-color: #444;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #666;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #444;
+            border: none;
+            color: #fff;
+            text-decoration: none;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #666;
+        }
+
+        .input-label {
+            color: #fff;
+            margin-bottom: 5px;
+        }
+      
+        .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+        background-color: #222;
+        color: #fff;
+        padding: 20px;
+        border: 2px dotted gray;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        }
+
+        /* Close Button Styles */
+        .close {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 24px;
+        color: #fff;
+        cursor: pointer;
+        }
+    </style>
+
+</head>
+<body>
+    <center>
+    <div class="container">
+        <h1>freeform journal entry</h1>
+        <form id="freeformJournalForm">
+            <div>
+                <label class="input-label" for="journalEntry">write your journal entry:</label>
+                <textarea id="journalEntry" class="text-input" rows="6" required></textarea>
+            </div>
+            <button class="submit-button" type="submit">submit</button>
+        </form>
+        <a href="index.html" class="btn">go back</a>
+    </div>
+    </center>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <p>your entry has been logged successfully!</p>
+        </div>
+      </div>
+      
+      <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    
+        // Your web app's Firebase configuration
+        // This is the configuration provided by Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+    
+        // Function to save freeform journal entry
+        document.getElementById('freeformJournalForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const journalEntry = document.getElementById('journalEntry').value;
+    
+            // Save the journal entry to Firebase Firestore with a timestamp
+            addDoc(collection(db, 'Freeform Entries'), {
+                journalEntry,
+                timestamp: serverTimestamp() // Add a server timestamp
+            })
+            .then(function (docRef) {
+                console.log(`Freeform journal entry saved with ID: ${docRef.id}`);
+                // Clear input field after saving
+                document.getElementById('journalEntry').value = '';
+                // Show the success modal
+                showModal();
+            })
+            .catch(function (error) {
+                console.error('Error adding document: ', error);
+            });
+        });
+
+        // Get the modal and close button elements
+        const modal = document.getElementById("myModal");
+        const closeButton = document.querySelector(".close");
+
+        // Function to display the modal
+        function showModal() {
+            modal.style.display = "block";
+        }
+
+        // Function to hide the modal
+        function hideModal() {
+            modal.style.display = "none";
+        }
+
+        // Close the modal when the close button is clicked
+        closeButton.addEventListener("click", hideModal);
+    </script>
+</body>
+</html>
