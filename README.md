@@ -67,7 +67,7 @@ setup firesore, follow these responses carefully:
 
 ![firestore](https://cdn.discordapp.com/attachments/1051281685234327613/1153863374136950845/image.png)
 
-. **deploy**
+11. **deploy**
 
 ```
 firebase deploy --only hosting   
